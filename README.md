@@ -25,8 +25,8 @@ You can:
 
 Run:
 
-```bash
-python main.py
+- python model.py
+- python main.py
 
 Key Insight
 
@@ -37,8 +37,8 @@ CNNs capture spatial structure and are more robust to small shifts in x and y di
 This makes them better suited for real-world handwritten input compared to fully connected networks.
 
 Results
-Neural Network: ~97% accuracy
-CNN: up to 99.4% accuracy
+- Neural Network: ~97% accuracy
+- CNN: up to 99.4% accuracy
 
 Detailed analysis shows:
 
@@ -52,26 +52,26 @@ From Scratch (pure Python)
 
 Advantages:
 
-Full understanding of how neural networks work
-Complete control over implementation
+- Full understanding of how neural networks work
+- Complete control over implementation
 
 Disadvantages:
 
-Slower
-More complex to implement
-Harder to scale
-PyTorch
+- Slower
+- More complex to implement
+- Harder to scale
+- PyTorch
 
 Advantages:
 
-Fast and efficient
-Easy to experiment with architectures
-Built-in tools for training and evaluation
+- Fast and efficient
+- Easy to experiment with architectures
+- Built-in tools for training and evaluation
 
 Disadvantages:
 
-Less low-level control
-Abstraction can hide implementation details
+- Less low-level control
+- Abstraction can hide implementation details
 
 Dataset
 
@@ -81,11 +81,13 @@ Setup
 
 Install dependencies:
 
-pip install torch torchvision arcade
+- pip install torch torchvision arcade
+
 Project Structure
-models/     # neural network implementations
-app/        # drawing interface
-main.py     # entry point
+- models/     # neural network implementations
+- app/        # drawing interface
+- main.py     # entry point
+
 Conclusion
 
 This project demonstrates how architectural choices impact performance in machine learning.
