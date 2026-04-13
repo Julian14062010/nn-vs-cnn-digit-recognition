@@ -48,6 +48,7 @@ Misclassifications often occur between visually similar digits (e.g. 3 ↔ 5, 4 
 This highlights the importance of spatial feature extraction.
 
 From Scratch vs Framework
+
 From Scratch (pure Python)
 
 Advantages:
@@ -60,7 +61,8 @@ Disadvantages:
 - Slower
 - More complex to implement
 - Harder to scale
-- PyTorch
+
+PyTorch
 
 Advantages:
 
