@@ -110,7 +110,7 @@ class Zahlenerkennen(arcade.Window):
         print("Prediction:", pred)
 
     def reset(self):
-        self.grid = [[0.0 for _ in range(ROWS)] for _ in range(COLS)]
+        self.grid = [[0.0 for _ in range(COLS)] for _ in range(ROWS)]
 
         
     
