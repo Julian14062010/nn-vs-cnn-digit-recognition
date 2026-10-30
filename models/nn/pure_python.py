@@ -1,6 +1,6 @@
 import math
 import random
-import numpy as np
+#import numpy as np
 import tensorflow as tf
 print(tf.__version__)
 from tensorflow import keras
@@ -16,130 +16,136 @@ x_test = x_test.reshape(10000, 784)
 x_train = x_train / 255
 x_test = x_test / 255
 
-w_hidden1 = [[random.uniform(-0.1, 0.1) for _ in range(len(x_train[0]))] for _ in range(128)]
-w_hidden2 = [[random.uniform(-0.1, 0.1) for _ in range(129)] for _ in range(64)]
-w_output = [[random.uniform(-0.1, 0.1) for _ in range(65)] for _ in range(10)]
+# Parameters
+
+lr = 0.01
+epochs = 10
+
+# _____________Functions_____________
+def zeros1(rows):
+    return [0.0 for _ in range(rows)]
+def zeros2(rows, cols):
+    return [[0.0 for _ in range(cols)] for _ in range(rows)]
+def update_weight(weight, gradient,):
+    for i in range(len(weight)):
+        for j in range(len(weight[0])):
+            weight[i][j] -= lr * gradient[i][j]
+    return weight
+def one_hot(y, num_classes=10):
+    out = []
+    for label in y:
+        v = [0.0] * num_classes
+        v[label] = 1.0
+        out.append(v)
+    return out
+def cross_entropy(pred, target):
+    return -sum(t * math.log(p + 1e-9) for p, t in zip(pred, target))
+
+# ____________Classes____________
+class Linear:
+    def __init__(self, input_neurons, output_neurons):
+        self.input_neurons = input_neurons
+        self.output_neurons = output_neurons
+        self.w = [[random.uniform(-0.1, 0.1) for _ in range(input_neurons)] for _ in range(output_neurons)]
+        
+    def forward(self, x):
+        self.x = x
+        self.z = [sum(x[h] * self.w[j][h] for h in range(self.input_neurons)) for j in range(self.output_neurons)]
+        out = [ReLU.forward(v) for v in self.z]
+        return out
+
+    def backward(self, delta):
+        for i in range(len(delta)):
+            delta[i] *= ReLU.backward(self.z[i])
+        gradient_w = [[delta[j] * self.x[h] for h in range(self.input_neurons)] for j in range(self.output_neurons)]
+        delta_prev = [sum(delta[j] * self.w[j][h] for j in range(self.output_neurons)) for h in range(self.input_neurons)]
+        self.w = update_weight(self.w, gradient_w)
+        return delta_prev
+
+class ReLU:
+    @staticmethod
+    def forward(x):
+        return max(0, x)
+
+    def backward(x):
+        return 1 if x > 0 else 0
+
+class Softmax:
+    def forward(self, z):
+        max_z = max(z)
+        exp_values = [math.exp(v - max_z) for v in z]
+        sum_exp = sum(exp_values)
+        self.output = [v / sum_exp for v in exp_values]
+        return self.output
+
+    def backward(self, y_true):
+        delta = [self.output[j] - y_true[j] for j in range(len(self.output))]
+        return delta
 
 
-
-def ReLU(x):
-    return max(0, x)
-
-def ableitung_von_ReLU(x):
-    return 1 if x > 0 else 0
-
-def softmax(z_out):
-    max_z = max(z_out)
-    exp_values = [math.exp(z - max_z) for z in z_out]
-    sum_exp = sum(exp_values)
-    return [v/sum_exp for v in exp_values] 
-
-def loss_funktion(y_vorhersage, y_batch):
-    loss = 0
-    loss += (y_batch[i][j] * math.log(y_vorhersage[j] + 1e-9) for j in range(10))
-    return -loss
-
-def y_transformieren(y):
-    liste = [0.0]*10
-    liste[y] = 1
-    return liste
-
-y_train = [y_transformieren(y) for y in y_train]
-y_test = [y_transformieren(y) for y in y_test]
 
             
+class NN:
+    def __init__(self):
+        self.layer1 = Linear(input_neurons=784, output_neurons=128)
+        self.layer2 = Linear(input_neurons=128, output_neurons=64)
+        self.layer3 = Linear(input_neurons=64, output_neurons=10)
+        self.softmax = Softmax()
+    def forward(self, x):
+        self.x = x
+        out = self.layer1.forward(self.x)
+        out = self.layer2.forward(out)
+        out = self.layer3.forward(out)
+        out = self.softmax.forward(out)
+        return out
 
-def pred():
-    i = 0
-    richtig = 0
-    falsch = 1
+    def backward(self, y_true):
+        delta = self.softmax.backward(y_true)
+        delta = self.layer3.backward(delta)
+        delta = self.layer2.backward(delta)
+        delta = self.layer1.backward(delta)
+
+
+
+
+nn = NN()
+
+# Training and Testing
+
+y_train_oh = one_hot(y_train)
+y_test_oh = one_hot(y_test)
+
+for epoch in range(epochs):
+    train_loss_sum = 0
+    test_loss_sum = 0
+    correct = 0
+
+    for i in range(len(x_train)):
+        if i % 500 == 0:
+            print("Training Iteration:", i)
+        x = x_train[i]
+        x = [float(v) for v in x]
+        y = y_train_oh[i]
+        pred = nn.forward(x)
+        train_loss_sum += cross_entropy(pred, y)
+        nn.backward(y)
+
+
     for i in range(len(x_test)):
-        z1_hidden = [sum(w_hidden1[h][j] * x_test[i][j] for j in range(len(x_test[0]))) for h in range(128)]
-        a1 = [ReLU(z1_hidden[j]) for j in range(128)] + [1.0]
-        z2_hidden = [sum(a1[j]*w_hidden2[h][j] for j in range(129)) for h in range(64)]
-        a2 = [ReLU(z2_hidden[j]) for j in range(64)] + [1.0]
-        z_out = [sum(a2[j]*w_output[h][j] for j in range(65)) for h in range(10)]
-        y_vorhersage = softmax(z_out)
-        y_max_vhs = np.argmax(y_vorhersage)
-        y_max_test = np.argmax(y_test[i])
+        x = x_test[i]
+        x = [float(v) for v in x]
+        y = y_test_oh[i]
+        pred = nn.forward(x)
+        pred_class = pred.index(max(pred))
+        if pred_class == y_test[i]:
+            correct += 1
+        test_loss_sum += cross_entropy(pred, y)
 
-        if y_max_vhs == y_max_test:
-            richtig += 1
+    train_loss_sum /= len(x_train)
+    test_loss_sum /= len(x_test)
+    accuracy = correct / len(x_test)
 
-    print(richtig / len(x_test))
-
-l_xtrain0 = len(x_train[0])
-
-learning_rate = 0.01
-for epoch in range(1):
-    print(epoch)
-    batch_size = 64
-
-    for start in range(0, len(x_train), batch_size):
-        end = start + batch_size  
-        x_batch = x_train[start:end]
-        y_batch = y_train[start:end]
-        d_gradient_w_hidden1 = [[0 for _ in range(l_xtrain0)] for _ in range(128)]
-        d_gradient_w_hidden2 = [[0 for _ in range(129)] for _ in range(64)]
-        d_gradient_w_out = [[0 for _ in range(65)] for _ in range(10)]
-        print(end)
-        l_xbatch0 = len(x_batch[0])
-        
-
-        for i in range(len(x_batch)):
-
-            # Forward Pass
-            z1_hidden = [sum(w_hidden1[h][j] * x_batch[i][j] for j in range(l_xtrain0)) for h in range(128)]
-            a1 = [ReLU(z1_hidden[j]) for j in range(128)] + [1.0]
-            z2_hidden = [sum(a1[j]*w_hidden2[h][j] for j in range(129)) for h in range(64)]
-            a2 = [ReLU(z2_hidden[j]) for j in range(64)] + [1.0]
-            z_out = [sum(a2[j]*w_output[h][j] for j in range(65)) for h in range(10)]
-            y_vorhersage = softmax(z_out)
-
-            #loss_funktion(y_vorhersage, y_batch)
-            
-            # Backpropagation
-            delta_out = [y_vorhersage[j] - y_batch[i][j] for j in range(10)]
-            gradient_w_out = [[delta_out[h] * a2[j] for j in range(65)] for h in range(10)]
-
-            delta_hidden2 = [sum(delta_out[h] * w_output[h][j]  for h in range(10)) * ableitung_von_ReLU(z2_hidden[j]) for j in range(64)]
-            gradient_w_hidden2 = [[delta_hidden2[h] * a1[j] for j in range(129)] for h in range(64)]
-            
-            delta_hidden1 = [sum(delta_hidden2[h] * w_hidden2[h][j]  for h in range(64)) * ableitung_von_ReLU(z1_hidden[j]) for j in range(128)]
-            gradient_w_hidden1 = [[delta_hidden1[h] * x_batch[i][j] for j in range(l_xbatch0)] for h in range(128)]
-
-            # addieren zum Durchschnittsgradienten
-            for j in range(128):
-                for h in range(l_xbatch0):
-                    d_gradient_w_hidden1[j][h] += gradient_w_hidden1[j][h]
-            for j in range(64):
-                for h in range(129):
-                    d_gradient_w_hidden2[j][h] += gradient_w_hidden2[j][h]
-            for j in range(10):
-                for h in range(65):
-                    d_gradient_w_out[j][h] += gradient_w_out[j][h]
-        
-        # berechnen des Durchsschnittsgradienten
-        for j in range(128):
-            for h in range(l_xbatch0):
-                d_gradient_w_hidden1[j][h] /= len(x_batch)
-        for j in range(64):
-            for h in range(129):
-                d_gradient_w_hidden2[j][h] /= len(x_batch)
-        for j in range(10):
-            for h in range(65):
-                d_gradient_w_out[j][h] /= len(x_batch)
-
-        # Gewichtsupdate
-        for j in range(128):
-            for h in range(l_xbatch0):
-                w_hidden1[j][h] -= learning_rate * d_gradient_w_hidden1[j][h]
-        for j in range(64):
-            for h in range(129):
-                w_hidden2[j][h] -= learning_rate * d_gradient_w_hidden2[j][h]
-        for j in range(10):
-            for h in range(65):
-                w_output[j][h] -= learning_rate * d_gradient_w_out[j][h]
-        
-
-    pred()
+    print("epoch:", epoch, "train_loss:", train_loss_sum)
+    print("epoch:", epoch, "test_loss:", test_loss_sum)
+    print("epoch:", epoch, "accuracy:", 100*accuracy,"%")
+    
